@@ -3,15 +3,16 @@ package main
 import (
 	"log"
 
-	es_log "github.com/qml-123/GateWay/kitex_gen/es_log/logservice"
+	"github.com/qml-123/GateWay/http"
+)
+
+const (
+	configPath = "config/services.json"
 )
 
 func main() {
-	svr := es_log.NewServer(new(LogServiceImpl))
-
-	err := svr.Run()
-
-	if err != nil {
-		log.Println(err.Error())
+	server := http.NewServer(configPath)
+	if err := server.Run(); err != nil {
+		log.Fatalf("Failed to run server: %v", err)
 	}
 }
