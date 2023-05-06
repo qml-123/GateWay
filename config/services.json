@@ -1,5 +1,8 @@
 {
-  "consul_address": "127.0.0.1:8500",
+  "service_name": "GateWay",
+  "listen_port": 9090,
+  "listen_ip": "114.116.15.130",
+  "consul_address": "114.116.15.130:8500",
   "api": [
     {
       "name": "LogService",

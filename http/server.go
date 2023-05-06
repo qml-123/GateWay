@@ -9,19 +9,14 @@ import (
 	"github.com/bytedance/gopkg/util/logger"
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
-	"github.com/qml-123/GateWay/common"
 	"github.com/qml-123/GateWay/model"
 	"github.com/qml-123/GateWay/rpc"
 )
 
-func NewServer(configPath string) *server.Hertz {
-	srv := server.Default(server.WithHostPorts(":9200"))
+func NewServer(conf *model.Conf, port int) *server.Hertz {
+	srv := server.Default(server.WithHostPorts(":" + fmt.Sprintf("%d", port)))
 
-	conf, err := common.GetJsonFromFile(configPath)
-	if err != nil {
-		panic(err)
-	}
-
+	var err error
 	if err = rpc.InitClient(conf); err != nil {
 		panic(err)
 	}

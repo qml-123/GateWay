@@ -12,8 +12,18 @@ type Api struct {
 }
 
 type Conf struct {
+	serviceName   string `json:"service_name"`
+	listenPort    int    `json:"listen_port"`
 	consulAddRess string `json:"consul_address"`
 	api           []*Api `json:"api"`
+}
+
+func (c *Conf) GetServiceName() string {
+	return c.serviceName
+}
+
+func (c *Conf) GetListenPort() int {
+	return c.listenPort
 }
 
 func (c *Conf) GetConsulAddRess() string {

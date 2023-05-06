@@ -2,11 +2,11 @@ package rpc
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/cloudwego/kitex/client"
 	"github.com/cloudwego/kitex/pkg/discovery"
 	consul "github.com/kitex-contrib/registry-consul"
-	"github.com/qml-123/GateWay/kitex_gen/app/appservice"
 	"github.com/qml-123/GateWay/kitex_gen/es_log/logservice"
 	"github.com/qml-123/GateWay/model"
 )
@@ -31,6 +31,7 @@ func InitClient(conf *model.Conf) (err error) {
 func initConsulClient(addr string) (err error) {
 	r, err = consul.NewConsulResolver(addr)
 	if err != nil {
+		log.Printf("NewConsulResolver failed")
 		return
 	}
 	return nil
@@ -38,21 +39,24 @@ func initConsulClient(addr string) (err error) {
 
 func initKitexClients() (err error) {
 	option := client.WithResolver(r)
+	m = make(map[string]client.Client)
 
 	{
-		log_client, err = client.NewClient(logservice.NewServiceInfo(), option)
+		log_client, err = client.NewClient(logservice.NewServiceInfo(), option, client.WithDestService(model.LogServiceName))
 		if err != nil {
+			log.Println("NewClient log filed")
 			return
 		}
 		m[model.LogServiceName] = log_client
 	}
 
 	{
-		app_client, err = client.NewClient(appservice.NewServiceInfo(), option)
-		if err != nil {
-			return
-		}
-		m[model.AppServiceName] = app_client
+		//app_client, err = client.NewClient(appservice.NewServiceInfo(), option, client.WithDestService(model.LogServiceName))
+		//if err != nil {
+		//	log.Println("NewClient app filed")
+		//	return
+		//}
+		//m[model.AppServiceName] = app_client
 	}
 
 	return nil
