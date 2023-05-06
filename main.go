@@ -11,7 +11,6 @@ import (
 	consul "github.com/kitex-contrib/registry-consul"
 	"github.com/qml-123/GateWay/common"
 	"github.com/qml-123/GateWay/http"
-	"github.com/qml-123/GateWay/model"
 )
 
 const (
@@ -23,22 +22,23 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	server := http.NewServer(conf, conf.GetListenPort())
-	addr, _ := net.ResolveTCPAddr("tcp", conf.GetListenIp()+":"+fmt.Sprintf("%d", conf.GetListenPort()))
+	log.Println(conf)
+	server := http.NewServer(conf, conf.ListenPort)
+	addr, _ := net.ResolveTCPAddr("tcp", conf.ListenIp+":"+fmt.Sprintf("%d", conf.ListenPort))
 	if err = initConsul(addr, conf); err != nil {
 		panic(err)
 	}
 
-	defer closeConsul(addr)
+	defer closeConsul(addr, conf)
 	if err := server.Run(); err != nil {
 		log.Fatalf("Failed to run server: %v", err)
 	}
 }
 
-func initConsul(addr net.Addr, conf *model.Conf) error {
+func initConsul(addr net.Addr, conf *common.Conf) error {
 	//r, err := consul.NewConsulRegister("127.0.0.1:8500")
 	r, err := consul.NewConsulRegisterWithConfig(&api.Config{
-		Address: conf.GetConsulAddRess(),
+		Address: conf.ConsulAddRess,
 		Scheme:  "http",
 	})
 	if err != nil {
@@ -46,7 +46,7 @@ func initConsul(addr net.Addr, conf *model.Conf) error {
 		return err
 	}
 	if err = r.Register(&registry.Info{
-		ServiceName: conf.GetServiceName(),
+		ServiceName: conf.ServiceName,
 		Addr:        addr,
 		StartTime:   time.Now(),
 		Weight:      1,
@@ -57,9 +57,9 @@ func initConsul(addr net.Addr, conf *model.Conf) error {
 	return nil
 }
 
-func closeConsul(addr net.Addr) {
+func closeConsul(addr net.Addr, conf *common.Conf) {
 	r, err := consul.NewConsulRegisterWithConfig(&api.Config{
-		Address: "114.116.15.130:8500",
+		Address: conf.ConsulAddRess,
 		Scheme:  "http",
 	})
 	if err != nil {
@@ -67,7 +67,7 @@ func closeConsul(addr net.Addr) {
 		return
 	}
 	if err = r.Deregister(&registry.Info{
-		ServiceName: model.ServiceName,
+		ServiceName: conf.ServiceName,
 		Addr:        addr,
 		StartTime:   time.Now(),
 		Weight:      1,

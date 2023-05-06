@@ -9,11 +9,11 @@ import (
 	"github.com/bytedance/gopkg/util/logger"
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
-	"github.com/qml-123/GateWay/model"
+	"github.com/qml-123/GateWay/common"
 	"github.com/qml-123/GateWay/rpc"
 )
 
-func NewServer(conf *model.Conf, port int) *server.Hertz {
+func NewServer(conf *common.Conf, port int) *server.Hertz {
 	srv := server.Default(server.WithHostPorts(":" + fmt.Sprintf("%d", port)))
 
 	var err error
@@ -28,18 +28,18 @@ func NewServer(conf *model.Conf, port int) *server.Hertz {
 	return srv
 }
 
-func registerFunc(srv *server.Hertz, conf *model.Conf) error {
-	for _, api := range conf.GetApi() {
-		service_name := api.GetName()
+func registerFunc(srv *server.Hertz, conf *common.Conf) error {
+	for _, api := range conf.Api {
+		service_name := api.Name
 		client, err := rpc.GetClient(service_name)
 		if err != nil {
 			return err
 		}
 
-		for _, method := range api.GetMethods() {
-			rpc_func_name := method.GetRpcFunction()
-			http_method := method.GetHttpMethod()
-			http_path := method.GetHttpPath()
+		for _, method := range api.Methods {
+			rpc_func_name := method.RpcFunction
+			http_method := method.HttpMethod
+			http_path := method.HttpPath
 
 			if http_method == "Post" {
 				srv.POST(http_path, func(c context.Context, ctx *app.RequestContext) {
