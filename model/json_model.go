@@ -23,6 +23,10 @@ func (c *Conf) GetServiceName() string {
 	return c.serviceName
 }
 
+func (c *Conf) GetListenIp() string {
+	return c.listenIp
+}
+
 func (c *Conf) GetListenPort() int {
 	return c.listenPort
 }

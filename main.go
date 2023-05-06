@@ -22,7 +22,7 @@ func main() {
 		panic(err)
 	}
 	server := http.NewServer(conf, conf.GetListenPort())
-	addr, _ := net.ResolveTCPAddr("tcp", "114.116.15.130:5000")
+	addr, _ := net.ResolveTCPAddr("tcp", conf.)
 	if err = initConsul(addr); err != nil {
 		panic(err)
 	}
