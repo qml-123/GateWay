@@ -14,6 +14,7 @@ type Api struct {
 type Conf struct {
 	serviceName   string `json:"service_name"`
 	listenPort    int    `json:"listen_port"`
+	listenIp      string `json:"listen_ip"`
 	consulAddRess string `json:"consul_address"`
 	api           []*Api `json:"api"`
 }
