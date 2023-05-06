@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"time"
@@ -10,6 +11,7 @@ import (
 	consul "github.com/kitex-contrib/registry-consul"
 	"github.com/qml-123/GateWay/common"
 	"github.com/qml-123/GateWay/http"
+	"github.com/qml-123/GateWay/model"
 )
 
 const (
@@ -22,8 +24,8 @@ func main() {
 		panic(err)
 	}
 	server := http.NewServer(conf, conf.GetListenPort())
-	addr, _ := net.ResolveTCPAddr("tcp", conf.)
-	if err = initConsul(addr); err != nil {
+	addr, _ := net.ResolveTCPAddr("tcp", conf.GetListenIp()+":"+fmt.Sprintf("%d", conf.GetListenPort()))
+	if err = initConsul(addr, conf); err != nil {
 		panic(err)
 	}
 
@@ -33,10 +35,10 @@ func main() {
 	}
 }
 
-func initConsul(addr net.Addr) error {
+func initConsul(addr net.Addr, conf *model.Conf) error {
 	//r, err := consul.NewConsulRegister("127.0.0.1:8500")
 	r, err := consul.NewConsulRegisterWithConfig(&api.Config{
-		Address: "114.116.15.130:8500",
+		Address: conf.GetConsulAddRess(),
 		Scheme:  "http",
 	})
 	if err != nil {
@@ -44,7 +46,7 @@ func initConsul(addr net.Addr) error {
 		return err
 	}
 	if err = r.Register(&registry.Info{
-		ServiceName: model.ServiceName,
+		ServiceName: conf.GetServiceName(),
 		Addr:        addr,
 		StartTime:   time.Now(),
 		Weight:      1,
