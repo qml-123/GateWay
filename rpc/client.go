@@ -16,12 +16,18 @@ import (
 type BaseClient struct {
 	_c     client.Client
 	c      interface{}
-	Method map[string]func()interface{}
+	Method map[string]func() interface{}
 }
 
 var (
-	r discovery.Resolver
+	r       discovery.Resolver
+	clients map[string]baseClient
 )
+
+type baseClient interface {
+	initClient() error
+	getHandler(method string) (func(c context.Context, ctx *app.RequestContext), error)
+}
 
 func InitClient(conf *common.Conf) (err error) {
 	// init consul
@@ -30,6 +36,7 @@ func InitClient(conf *common.Conf) (err error) {
 		return
 	}
 
+	clients = make(map[string]baseClient)
 	return initKitexClients()
 }
 
@@ -44,16 +51,23 @@ func initConsulClient(addr string) (err error) {
 
 func initKitexClients() error {
 
-	initLogClient()
+	{ // log
+		clients[model.LogServiceName] = newlogClient()
+		clients[model.LogServiceName].initClient()
+	}
+
+	{ // app
+		clients[model.AppServiceName] = newappClient()
+		clients[model.AppServiceName].initClient()
+	}
 
 	return nil
 }
 
-
 func GetHandler(service, method string) (func(c context.Context, ctx *app.RequestContext), error) {
-	if service == model.LogServiceName {
-		return getLogMethodHandler(method)
+	if _, ok := clients[service]; !ok {
+		return nil, fmt.Errorf("no service")
 	}
 
-	return nil, fmt.Errorf("no service")
+	return clients[service].getHandler(method)
 }

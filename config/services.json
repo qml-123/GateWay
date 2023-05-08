@@ -3,6 +3,7 @@
   "listen_port": 9090,
   "listen_ip": "114.116.15.130",
   "consul_address": "114.116.15.130:8500",
+  "es_url" :  ["https://114.116.15.130:9200"],
   "api": [
     {
       "name": "LogService",
@@ -11,6 +12,16 @@
           "rpc_function": "Search",
           "http_method": "POST",
           "http_path": "/api/search"
+        }
+      ]
+    },
+    {
+      "name": "AppService",
+      "methods": [
+        {
+          "rpc_function": "Ping",
+          "http_method": "POST",
+          "http_path": "/api/ping"
         }
       ]
     }

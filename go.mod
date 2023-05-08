@@ -8,6 +8,8 @@ require (
 	github.com/cloudwego/kitex v0.5.2
 	github.com/hashicorp/consul/api v1.20.0
 	github.com/kitex-contrib/registry-consul v0.0.0-20230406075225-7d341f036654
+	github.com/qml-123/AppService v0.0.0-20230508145903-748c59da28c1
+	github.com/qml-123/es_log v0.0.0-20230508142422-b285697f117f
 )
 
 require (

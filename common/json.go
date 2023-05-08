@@ -5,7 +5,6 @@ import (
 	"os"
 )
 
-
 type Methods struct {
 	RpcFunction string `json:"rpc_function"`
 	HttpMethod  string `json:"http_method"`
@@ -18,11 +17,12 @@ type Api struct {
 }
 
 type Conf struct {
-	ServiceName   string `json:"service_name"`
-	ListenPort    int    `json:"listen_port"`
-	ListenIp      string `json:"listen_ip"`
-	ConsulAddRess string `json:"consul_address"`
-	Api           []*Api `json:"api"`
+	ServiceName   string   `json:"service_name"`
+	ListenPort    int      `json:"listen_port"`
+	ListenIp      string   `json:"listen_ip"`
+	ConsulAddRess string   `json:"consul_address"`
+	Api           []*Api   `json:"api"`
+	EsUrl         []string `json:"es_url"`
 }
 
 func GetJsonFromFile(filePath string) (*Conf, error) {
