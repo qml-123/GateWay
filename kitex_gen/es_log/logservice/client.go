@@ -11,6 +11,7 @@ import (
 
 // Client is designed to provide IDL-compatible methods with call-option parameter for kitex framework.
 type Client interface {
+	//Call(ctx context.Context, method string, req, resp interface{}) error
 	Search(ctx context.Context, req *es_log.SearchRequest, callOptions ...callopt.Option) (r *es_log.SearchResponse, err error)
 }
 

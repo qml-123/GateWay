@@ -21,7 +21,7 @@ type SearchRequest struct {
 	KeyWordsOr    *bool          `thrift:"key_words_or,8,optional" frugal:"8,optional,bool" json:"key_words_or,omitempty"`
 	FilterWords   []string       `thrift:"filter_words,9,optional" frugal:"9,optional,list<string>" json:"filter_words,omitempty"`
 	FilterWordsOr *bool          `thrift:"filter_words_or,10,optional" frugal:"10,optional,bool" json:"filter_words_or,omitempty"`
-	BaseData      *base.BaseData `thrift:"baseData,255,required" frugal:"255,required,base.BaseData" json:"baseData"`
+	BaseData      *base.BaseData `thrift:"baseData,255,optional" frugal:"255,optional,base.BaseData" json:"baseData,omitempty"`
 }
 
 func NewSearchRequest() *SearchRequest {
@@ -226,7 +226,6 @@ func (p *SearchRequest) Read(iprot thrift.TProtocol) (err error) {
 
 	var fieldTypeId thrift.TType
 	var fieldId int16
-	var issetBaseData bool = false
 
 	if _, err = iprot.ReadStructBegin(); err != nil {
 		goto ReadStructBeginError
@@ -347,7 +346,6 @@ func (p *SearchRequest) Read(iprot thrift.TProtocol) (err error) {
 				if err = p.ReadField255(iprot); err != nil {
 					goto ReadFieldError
 				}
-				issetBaseData = true
 			} else {
 				if err = iprot.Skip(fieldTypeId); err != nil {
 					goto SkipFieldError
@@ -367,10 +365,6 @@ func (p *SearchRequest) Read(iprot thrift.TProtocol) (err error) {
 		goto ReadStructEndError
 	}
 
-	if !issetBaseData {
-		fieldId = 255
-		goto RequiredFieldNotSetError
-	}
 	return nil
 ReadStructBeginError:
 	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
@@ -385,8 +379,6 @@ ReadFieldEndError:
 	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
 ReadStructEndError:
 	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
-RequiredFieldNotSetError:
-	return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("required field %s is not set", fieldIDToName_SearchRequest[fieldId]))
 }
 
 func (p *SearchRequest) ReadField1(iprot thrift.TProtocol) error {
@@ -810,14 +802,16 @@ WriteFieldEndError:
 }
 
 func (p *SearchRequest) writeField255(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("baseData", thrift.STRUCT, 255); err != nil {
-		goto WriteFieldBeginError
-	}
-	if err := p.BaseData.Write(oprot); err != nil {
-		return err
-	}
-	if err = oprot.WriteFieldEnd(); err != nil {
-		goto WriteFieldEndError
+	if p.IsSetBaseData() {
+		if err = oprot.WriteFieldBegin("baseData", thrift.STRUCT, 255); err != nil {
+			goto WriteFieldBeginError
+		}
+		if err := p.BaseData.Write(oprot); err != nil {
+			return err
+		}
+		if err = oprot.WriteFieldEnd(); err != nil {
+			goto WriteFieldEndError
+		}
 	}
 	return nil
 WriteFieldBeginError:

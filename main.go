@@ -22,7 +22,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	log.Println(conf)
 	server := http.NewServer(conf, conf.ListenPort)
 	addr, _ := net.ResolveTCPAddr("tcp", conf.ListenIp+":"+fmt.Sprintf("%d", conf.ListenPort))
 	if err = initConsul(addr, conf); err != nil {

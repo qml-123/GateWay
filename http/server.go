@@ -4,9 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 
-	"github.com/bytedance/gopkg/util/logger"
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"github.com/qml-123/GateWay/common"
@@ -15,6 +13,7 @@ import (
 
 func NewServer(conf *common.Conf, port int) *server.Hertz {
 	srv := server.Default(server.WithHostPorts(":" + fmt.Sprintf("%d", port)))
+	srv.Use(CorsMiddleware())
 
 	var err error
 	if err = rpc.InitClient(conf); err != nil {
@@ -28,41 +27,34 @@ func NewServer(conf *common.Conf, port int) *server.Hertz {
 	return srv
 }
 
+type rpcRequest struct {
+	Params json.RawMessage `json:"params"`
+}
+
 func registerFunc(srv *server.Hertz, conf *common.Conf) error {
 	for _, api := range conf.Api {
 		service_name := api.Name
-		client, err := rpc.GetClient(service_name)
-		if err != nil {
-			return err
-		}
 
 		for _, method := range api.Methods {
 			rpc_func_name := method.RpcFunction
 			http_method := method.HttpMethod
 			http_path := method.HttpPath
 
-			if http_method == "Post" {
-				srv.POST(http_path, func(c context.Context, ctx *app.RequestContext) {
-					var req interface{}
-					err = json.NewDecoder(ctx.GetRequest().BodyStream()).Decode(req)
-					if err != nil {
-						ctx.AbortWithStatus(http.StatusInternalServerError)
-						return
-					}
-					var resp interface{}
-					rpcCtx := context.Background()
-					err = client.Call(rpcCtx, rpc_func_name, req, resp)
-					if err != nil {
-						ctx.AbortWithStatus(http.StatusInternalServerError)
-						return
-					}
-					logger.Info("http_resp: %v", resp)
-					ctx.JSON(http.StatusOK, resp)
-				})
-			} else if http_path == "Get" {
-				srv.GET(http_path, func(c context.Context, ctx *app.RequestContext) {
+			//reqType, respType, err := getReqAndRespTypes(_client.GetClient(), rpc_func_name)
+			//if err != nil {
+			//	return err
+			//}
+			//logger.Infof("reqType: %v, respType: %v", reqType, respType)
 
-				})
+
+			if http_method == "POST" {
+				f, err := rpc.GetHandler(service_name, rpc_func_name)
+				if err != nil {
+					return err
+				}
+				srv.POST(http_path, f)
+			} else if http_path == "Get" {
+				srv.GET(http_path, func(c context.Context, ctx *app.RequestContext) {})
 			} else {
 				return fmt.Errorf("not suport mehod: %s", http_method)
 			}

@@ -29,8 +29,6 @@ func (p *BaseData) FastRead(buf []byte) (int, error) {
 	var l int
 	var fieldTypeId thrift.TType
 	var fieldId int16
-	var issetLogId bool = false
-	var issetCode bool = false
 	_, l, err = bthrift.Binary.ReadStructBegin(buf)
 	offset += l
 	if err != nil {
@@ -54,7 +52,6 @@ func (p *BaseData) FastRead(buf []byte) (int, error) {
 				if err != nil {
 					goto ReadFieldError
 				}
-				issetLogId = true
 			} else {
 				l, err = bthrift.Binary.Skip(buf[offset:], fieldTypeId)
 				offset += l
@@ -125,7 +122,6 @@ func (p *BaseData) FastRead(buf []byte) (int, error) {
 				if err != nil {
 					goto ReadFieldError
 				}
-				issetCode = true
 			} else {
 				l, err = bthrift.Binary.Skip(buf[offset:], fieldTypeId)
 				offset += l
@@ -167,15 +163,6 @@ func (p *BaseData) FastRead(buf []byte) (int, error) {
 		goto ReadStructEndError
 	}
 
-	if !issetLogId {
-		fieldId = 1
-		goto RequiredFieldNotSetError
-	}
-
-	if !issetCode {
-		fieldId = 6
-		goto RequiredFieldNotSetError
-	}
 	return offset, nil
 ReadStructBeginError:
 	return offset, thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
@@ -189,8 +176,6 @@ ReadFieldEndError:
 	return offset, thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
 ReadStructEndError:
 	return offset, thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
-RequiredFieldNotSetError:
-	return offset, thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("required field %s is not set", fieldIDToName_BaseData[fieldId]))
 }
 
 func (p *BaseData) FastReadField1(buf []byte) (int, error) {
@@ -200,8 +185,7 @@ func (p *BaseData) FastReadField1(buf []byte) (int, error) {
 		return offset, err
 	} else {
 		offset += l
-
-		p.LogId = v
+		p.LogId = &v
 
 	}
 	return offset, nil
@@ -266,8 +250,7 @@ func (p *BaseData) FastReadField6(buf []byte) (int, error) {
 		return offset, err
 	} else {
 		offset += l
-
-		p.Code = v
+		p.Code = &v
 
 	}
 	return offset, nil
@@ -327,10 +310,12 @@ func (p *BaseData) BLength() int {
 
 func (p *BaseData) fastWriteField1(buf []byte, binaryWriter bthrift.BinaryWriter) int {
 	offset := 0
-	offset += bthrift.Binary.WriteFieldBegin(buf[offset:], "log_id", thrift.STRING, 1)
-	offset += bthrift.Binary.WriteStringNocopy(buf[offset:], binaryWriter, p.LogId)
+	if p.IsSetLogId() {
+		offset += bthrift.Binary.WriteFieldBegin(buf[offset:], "log_id", thrift.STRING, 1)
+		offset += bthrift.Binary.WriteStringNocopy(buf[offset:], binaryWriter, *p.LogId)
 
-	offset += bthrift.Binary.WriteFieldEnd(buf[offset:])
+		offset += bthrift.Binary.WriteFieldEnd(buf[offset:])
+	}
 	return offset
 }
 
@@ -380,10 +365,12 @@ func (p *BaseData) fastWriteField5(buf []byte, binaryWriter bthrift.BinaryWriter
 
 func (p *BaseData) fastWriteField6(buf []byte, binaryWriter bthrift.BinaryWriter) int {
 	offset := 0
-	offset += bthrift.Binary.WriteFieldBegin(buf[offset:], "code", thrift.I32, 6)
-	offset += bthrift.Binary.WriteI32(buf[offset:], p.Code)
+	if p.IsSetCode() {
+		offset += bthrift.Binary.WriteFieldBegin(buf[offset:], "code", thrift.I32, 6)
+		offset += bthrift.Binary.WriteI32(buf[offset:], *p.Code)
 
-	offset += bthrift.Binary.WriteFieldEnd(buf[offset:])
+		offset += bthrift.Binary.WriteFieldEnd(buf[offset:])
+	}
 	return offset
 }
 
@@ -400,10 +387,12 @@ func (p *BaseData) fastWriteField7(buf []byte, binaryWriter bthrift.BinaryWriter
 
 func (p *BaseData) field1Length() int {
 	l := 0
-	l += bthrift.Binary.FieldBeginLength("log_id", thrift.STRING, 1)
-	l += bthrift.Binary.StringLengthNocopy(p.LogId)
+	if p.IsSetLogId() {
+		l += bthrift.Binary.FieldBeginLength("log_id", thrift.STRING, 1)
+		l += bthrift.Binary.StringLengthNocopy(*p.LogId)
 
-	l += bthrift.Binary.FieldEndLength()
+		l += bthrift.Binary.FieldEndLength()
+	}
 	return l
 }
 
@@ -453,10 +442,12 @@ func (p *BaseData) field5Length() int {
 
 func (p *BaseData) field6Length() int {
 	l := 0
-	l += bthrift.Binary.FieldBeginLength("code", thrift.I32, 6)
-	l += bthrift.Binary.I32Length(p.Code)
+	if p.IsSetCode() {
+		l += bthrift.Binary.FieldBeginLength("code", thrift.I32, 6)
+		l += bthrift.Binary.I32Length(*p.Code)
 
-	l += bthrift.Binary.FieldEndLength()
+		l += bthrift.Binary.FieldEndLength()
+	}
 	return l
 }
 

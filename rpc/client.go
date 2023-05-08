@@ -1,26 +1,31 @@
 package rpc
 
 import (
+	"context"
 	"fmt"
 	"log"
 
+	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/kitex/client"
 	"github.com/cloudwego/kitex/pkg/discovery"
 	consul "github.com/kitex-contrib/registry-consul"
-	"github.com/qml-123/GateWay/kitex_gen/es_log/logservice"
+	"github.com/qml-123/GateWay/common"
 	"github.com/qml-123/GateWay/model"
 )
 
+type BaseClient struct {
+	_c     client.Client
+	c      interface{}
+	Method map[string]func()interface{}
+}
+
 var (
-	r          discovery.Resolver
-	app_client client.Client
-	log_client client.Client
-	m          map[string]client.Client
+	r discovery.Resolver
 )
 
-func InitClient(conf *model.Conf) (err error) {
+func InitClient(conf *common.Conf) (err error) {
 	// init consul
-	err = initConsulClient(conf.GetConsulAddRess())
+	err = initConsulClient(conf.ConsulAddRess)
 	if err != nil {
 		return
 	}
@@ -37,34 +42,18 @@ func initConsulClient(addr string) (err error) {
 	return nil
 }
 
-func initKitexClients() (err error) {
-	option := client.WithResolver(r)
-	m = make(map[string]client.Client)
+func initKitexClients() error {
 
-	{
-		log_client, err = client.NewClient(logservice.NewServiceInfo(), option, client.WithDestService(model.LogServiceName))
-		if err != nil {
-			log.Println("NewClient log filed")
-			return
-		}
-		m[model.LogServiceName] = log_client
-	}
-
-	{
-		//app_client, err = client.NewClient(appservice.NewServiceInfo(), option, client.WithDestService(model.LogServiceName))
-		//if err != nil {
-		//	log.Println("NewClient app filed")
-		//	return
-		//}
-		//m[model.AppServiceName] = app_client
-	}
+	initLogClient()
 
 	return nil
 }
 
-func GetClient(serviceName string) (client.Client, error) {
-	if _, ok := m[serviceName]; !ok {
-		return nil, fmt.Errorf("no service: %s", serviceName)
+
+func GetHandler(service, method string) (func(c context.Context, ctx *app.RequestContext), error) {
+	if service == model.LogServiceName {
+		return getLogMethodHandler(method)
 	}
-	return m[serviceName], nil
+
+	return nil, fmt.Errorf("no service")
 }

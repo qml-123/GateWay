@@ -9,12 +9,12 @@ import (
 )
 
 type BaseData struct {
-	LogId       string  `thrift:"log_id,1,required" frugal:"1,required,string" json:"log_id"`
+	LogId       *string `thrift:"log_id,1,optional" frugal:"1,optional,string" json:"log_id,omitempty"`
 	FromService *string `thrift:"from_service,2,optional" frugal:"2,optional,string" json:"from_service,omitempty"`
 	ToService   *string `thrift:"to_service,3,optional" frugal:"3,optional,string" json:"to_service,omitempty"`
 	ToMethod    *string `thrift:"to_method,4,optional" frugal:"4,optional,string" json:"to_method,omitempty"`
 	Locate      *string `thrift:"locate,5,optional" frugal:"5,optional,string" json:"locate,omitempty"`
-	Code        int32   `thrift:"code,6,required" frugal:"6,required,i32" json:"code"`
+	Code        *int32  `thrift:"code,6,optional" frugal:"6,optional,i32" json:"code,omitempty"`
 	Message     *string `thrift:"message,7,optional" frugal:"7,optional,string" json:"message,omitempty"`
 }
 
@@ -26,8 +26,13 @@ func (p *BaseData) InitDefault() {
 	*p = BaseData{}
 }
 
+var BaseData_LogId_DEFAULT string
+
 func (p *BaseData) GetLogId() (v string) {
-	return p.LogId
+	if !p.IsSetLogId() {
+		return BaseData_LogId_DEFAULT
+	}
+	return *p.LogId
 }
 
 var BaseData_FromService_DEFAULT string
@@ -66,8 +71,13 @@ func (p *BaseData) GetLocate() (v string) {
 	return *p.Locate
 }
 
+var BaseData_Code_DEFAULT int32
+
 func (p *BaseData) GetCode() (v int32) {
-	return p.Code
+	if !p.IsSetCode() {
+		return BaseData_Code_DEFAULT
+	}
+	return *p.Code
 }
 
 var BaseData_Message_DEFAULT string
@@ -78,7 +88,7 @@ func (p *BaseData) GetMessage() (v string) {
 	}
 	return *p.Message
 }
-func (p *BaseData) SetLogId(val string) {
+func (p *BaseData) SetLogId(val *string) {
 	p.LogId = val
 }
 func (p *BaseData) SetFromService(val *string) {
@@ -93,7 +103,7 @@ func (p *BaseData) SetToMethod(val *string) {
 func (p *BaseData) SetLocate(val *string) {
 	p.Locate = val
 }
-func (p *BaseData) SetCode(val int32) {
+func (p *BaseData) SetCode(val *int32) {
 	p.Code = val
 }
 func (p *BaseData) SetMessage(val *string) {
@@ -108,6 +118,10 @@ var fieldIDToName_BaseData = map[int16]string{
 	5: "locate",
 	6: "code",
 	7: "message",
+}
+
+func (p *BaseData) IsSetLogId() bool {
+	return p.LogId != nil
 }
 
 func (p *BaseData) IsSetFromService() bool {
@@ -126,6 +140,10 @@ func (p *BaseData) IsSetLocate() bool {
 	return p.Locate != nil
 }
 
+func (p *BaseData) IsSetCode() bool {
+	return p.Code != nil
+}
+
 func (p *BaseData) IsSetMessage() bool {
 	return p.Message != nil
 }
@@ -134,8 +152,6 @@ func (p *BaseData) Read(iprot thrift.TProtocol) (err error) {
 
 	var fieldTypeId thrift.TType
 	var fieldId int16
-	var issetLogId bool = false
-	var issetCode bool = false
 
 	if _, err = iprot.ReadStructBegin(); err != nil {
 		goto ReadStructBeginError
@@ -156,7 +172,6 @@ func (p *BaseData) Read(iprot thrift.TProtocol) (err error) {
 				if err = p.ReadField1(iprot); err != nil {
 					goto ReadFieldError
 				}
-				issetLogId = true
 			} else {
 				if err = iprot.Skip(fieldTypeId); err != nil {
 					goto SkipFieldError
@@ -207,7 +222,6 @@ func (p *BaseData) Read(iprot thrift.TProtocol) (err error) {
 				if err = p.ReadField6(iprot); err != nil {
 					goto ReadFieldError
 				}
-				issetCode = true
 			} else {
 				if err = iprot.Skip(fieldTypeId); err != nil {
 					goto SkipFieldError
@@ -237,15 +251,6 @@ func (p *BaseData) Read(iprot thrift.TProtocol) (err error) {
 		goto ReadStructEndError
 	}
 
-	if !issetLogId {
-		fieldId = 1
-		goto RequiredFieldNotSetError
-	}
-
-	if !issetCode {
-		fieldId = 6
-		goto RequiredFieldNotSetError
-	}
 	return nil
 ReadStructBeginError:
 	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
@@ -260,15 +265,13 @@ ReadFieldEndError:
 	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
 ReadStructEndError:
 	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
-RequiredFieldNotSetError:
-	return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("required field %s is not set", fieldIDToName_BaseData[fieldId]))
 }
 
 func (p *BaseData) ReadField1(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadString(); err != nil {
 		return err
 	} else {
-		p.LogId = v
+		p.LogId = &v
 	}
 	return nil
 }
@@ -313,7 +316,7 @@ func (p *BaseData) ReadField6(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadI32(); err != nil {
 		return err
 	} else {
-		p.Code = v
+		p.Code = &v
 	}
 	return nil
 }
@@ -381,14 +384,16 @@ WriteStructEndError:
 }
 
 func (p *BaseData) writeField1(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("log_id", thrift.STRING, 1); err != nil {
-		goto WriteFieldBeginError
-	}
-	if err := oprot.WriteString(p.LogId); err != nil {
-		return err
-	}
-	if err = oprot.WriteFieldEnd(); err != nil {
-		goto WriteFieldEndError
+	if p.IsSetLogId() {
+		if err = oprot.WriteFieldBegin("log_id", thrift.STRING, 1); err != nil {
+			goto WriteFieldBeginError
+		}
+		if err := oprot.WriteString(*p.LogId); err != nil {
+			return err
+		}
+		if err = oprot.WriteFieldEnd(); err != nil {
+			goto WriteFieldEndError
+		}
 	}
 	return nil
 WriteFieldBeginError:
@@ -474,14 +479,16 @@ WriteFieldEndError:
 }
 
 func (p *BaseData) writeField6(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("code", thrift.I32, 6); err != nil {
-		goto WriteFieldBeginError
-	}
-	if err := oprot.WriteI32(p.Code); err != nil {
-		return err
-	}
-	if err = oprot.WriteFieldEnd(); err != nil {
-		goto WriteFieldEndError
+	if p.IsSetCode() {
+		if err = oprot.WriteFieldBegin("code", thrift.I32, 6); err != nil {
+			goto WriteFieldBeginError
+		}
+		if err := oprot.WriteI32(*p.Code); err != nil {
+			return err
+		}
+		if err = oprot.WriteFieldEnd(); err != nil {
+			goto WriteFieldEndError
+		}
 	}
 	return nil
 WriteFieldBeginError:
@@ -546,9 +553,14 @@ func (p *BaseData) DeepEqual(ano *BaseData) bool {
 	return true
 }
 
-func (p *BaseData) Field1DeepEqual(src string) bool {
+func (p *BaseData) Field1DeepEqual(src *string) bool {
 
-	if strings.Compare(p.LogId, src) != 0 {
+	if p.LogId == src {
+		return true
+	} else if p.LogId == nil || src == nil {
+		return false
+	}
+	if strings.Compare(*p.LogId, *src) != 0 {
 		return false
 	}
 	return true
@@ -601,9 +613,14 @@ func (p *BaseData) Field5DeepEqual(src *string) bool {
 	}
 	return true
 }
-func (p *BaseData) Field6DeepEqual(src int32) bool {
+func (p *BaseData) Field6DeepEqual(src *int32) bool {
 
-	if p.Code != src {
+	if p.Code == src {
+		return true
+	} else if p.Code == nil || src == nil {
+		return false
+	}
+	if *p.Code != *src {
 		return false
 	}
 	return true

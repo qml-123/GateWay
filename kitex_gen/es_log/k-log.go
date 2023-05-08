@@ -31,7 +31,6 @@ func (p *SearchRequest) FastRead(buf []byte) (int, error) {
 	var l int
 	var fieldTypeId thrift.TType
 	var fieldId int16
-	var issetBaseData bool = false
 	_, l, err = bthrift.Binary.ReadStructBegin(buf)
 	offset += l
 	if err != nil {
@@ -195,7 +194,6 @@ func (p *SearchRequest) FastRead(buf []byte) (int, error) {
 				if err != nil {
 					goto ReadFieldError
 				}
-				issetBaseData = true
 			} else {
 				l, err = bthrift.Binary.Skip(buf[offset:], fieldTypeId)
 				offset += l
@@ -223,10 +221,6 @@ func (p *SearchRequest) FastRead(buf []byte) (int, error) {
 		goto ReadStructEndError
 	}
 
-	if !issetBaseData {
-		fieldId = 255
-		goto RequiredFieldNotSetError
-	}
 	return offset, nil
 ReadStructBeginError:
 	return offset, thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
@@ -240,8 +234,6 @@ ReadFieldEndError:
 	return offset, thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
 ReadStructEndError:
 	return offset, thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
-RequiredFieldNotSetError:
-	return offset, thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("required field %s is not set", fieldIDToName_SearchRequest[fieldId]))
 }
 
 func (p *SearchRequest) FastReadField1(buf []byte) (int, error) {
@@ -621,9 +613,11 @@ func (p *SearchRequest) fastWriteField10(buf []byte, binaryWriter bthrift.Binary
 
 func (p *SearchRequest) fastWriteField255(buf []byte, binaryWriter bthrift.BinaryWriter) int {
 	offset := 0
-	offset += bthrift.Binary.WriteFieldBegin(buf[offset:], "baseData", thrift.STRUCT, 255)
-	offset += p.BaseData.FastWriteNocopy(buf[offset:], binaryWriter)
-	offset += bthrift.Binary.WriteFieldEnd(buf[offset:])
+	if p.IsSetBaseData() {
+		offset += bthrift.Binary.WriteFieldBegin(buf[offset:], "baseData", thrift.STRUCT, 255)
+		offset += p.BaseData.FastWriteNocopy(buf[offset:], binaryWriter)
+		offset += bthrift.Binary.WriteFieldEnd(buf[offset:])
+	}
 	return offset
 }
 
@@ -751,9 +745,11 @@ func (p *SearchRequest) field10Length() int {
 
 func (p *SearchRequest) field255Length() int {
 	l := 0
-	l += bthrift.Binary.FieldBeginLength("baseData", thrift.STRUCT, 255)
-	l += p.BaseData.BLength()
-	l += bthrift.Binary.FieldEndLength()
+	if p.IsSetBaseData() {
+		l += bthrift.Binary.FieldBeginLength("baseData", thrift.STRUCT, 255)
+		l += p.BaseData.BLength()
+		l += bthrift.Binary.FieldEndLength()
+	}
 	return l
 }
 
