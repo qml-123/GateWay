@@ -9,7 +9,7 @@ import (
 	consul "github.com/kitex-contrib/registry-consul"
 )
 
-func initConsul(addr net.Addr, conf *Conf) error {
+func InitConsul(addr net.Addr, conf *Conf) error {
 	r, err := consul.NewConsulRegisterWithConfig(&api.Config{
 		Address: conf.ConsulAddRess,
 		Scheme:  "http",
@@ -28,7 +28,7 @@ func initConsul(addr net.Addr, conf *Conf) error {
 	return nil
 }
 
-func closeConsul(addr net.Addr, conf *Conf) error {
+func CloseConsul(addr net.Addr, conf *Conf) error {
 	r, err := consul.NewConsulRegisterWithConfig(&api.Config{
 		Address: conf.ConsulAddRess,
 		Scheme:  "http",
