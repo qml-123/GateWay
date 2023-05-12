@@ -8,7 +8,7 @@ import (
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"github.com/qml-123/GateWay/common"
-	"github.com/qml-123/GateWay/rpc"
+	"github.com/qml-123/GateWay/pkg/rpc"
 )
 
 func NewServer(conf *common.Conf, port int) *server.Hertz {
@@ -45,7 +45,6 @@ func registerFunc(srv *server.Hertz, conf *common.Conf) error {
 			//	return err
 			//}
 			//logger.Infof("reqType: %v, respType: %v", reqType, respType)
-
 
 			if http_method == "POST" {
 				f, err := rpc.GetHandler(service_name, rpc_func_name)

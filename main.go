@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"log"
 	"net"
 
 	"github.com/qml-123/GateWay/common"
-	"github.com/qml-123/GateWay/http"
+	"github.com/qml-123/GateWay/pkg/http"
+	"github.com/qml-123/GateWay/pkg/log"
+	"github.com/qml-123/app_log/logger"
 )
 
 const (
@@ -14,8 +16,12 @@ const (
 )
 
 func main() {
+	ctx := context.Background()
 	conf, err := common.GetJsonFromFile(configPath)
 	if err != nil {
+		panic(err)
+	}
+	if err = log.InitLogger(conf.EsUrl); err != nil {
 		panic(err)
 	}
 	server := http.NewServer(conf, conf.ListenPort)
@@ -26,6 +32,6 @@ func main() {
 
 	defer common.CloseConsul(addr, conf)
 	if err := server.Run(); err != nil {
-		log.Fatalf("Failed to run server: %v", err)
+		logger.Warn(ctx, "Failed to run server: %v", err)
 	}
 }
