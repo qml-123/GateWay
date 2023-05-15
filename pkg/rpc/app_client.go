@@ -10,8 +10,8 @@ import (
 	"github.com/cloudwego/kitex/client"
 	app_service "github.com/qml-123/AppService/kitex_gen/app"
 	"github.com/qml-123/AppService/kitex_gen/app/appservice"
-	"github.com/qml-123/GateWay/error_code"
 	"github.com/qml-123/GateWay/model"
+	"github.com/qml-123/app_log/error_code"
 )
 
 type appClient struct {
