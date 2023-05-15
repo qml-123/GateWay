@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/qml-123/AppService/pkg/db"
 	"github.com/qml-123/GateWay/common"
 	"github.com/qml-123/GateWay/pkg/http"
 	"github.com/qml-123/GateWay/pkg/log"
@@ -21,7 +22,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	// log
 	if err = log.InitLogger(conf.EsUrl); err != nil {
+		panic(err)
+	}
+	//db
+	if err = db.InitDB(); err != nil {
 		panic(err)
 	}
 	server := http.NewServer(conf, conf.ListenPort)
