@@ -11,6 +11,7 @@ import (
 	"github.com/cloudwego/kitex/client"
 	"github.com/qml-123/GateWay/error_code"
 	"github.com/qml-123/GateWay/model"
+	"github.com/qml-123/app_log/logger"
 	"github.com/qml-123/es_log/kitex_gen/es_log"
 	"github.com/qml-123/es_log/kitex_gen/es_log/logservice"
 )
@@ -48,11 +49,13 @@ func (cli *logClient) getHandler(method string) (func(c context.Context, ctx *ap
 func (cli *logClient) SearchHandler(c context.Context, ctx *app.RequestContext) {
 	req := es_log.NewSearchRequest()
 	if err := json.Unmarshal(ctx.Request.Body(), req); err != nil {
+		logger.Warn(c, "[Search] req unmarshal failed, err: %v", err)
 		ctx.JSON(http.StatusInternalServerError, error_code.InternalError)
 		return
 	}
 	resp, err := cli.log_service_client.Search(c, req)
 	if err != nil {
+		logger.Error(c, "[Search] call Search failed, err: %v", err)
 		ctx.JSON(http.StatusInternalServerError, error_code.InternalError)
 		return
 	}
