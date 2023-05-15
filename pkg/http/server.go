@@ -7,8 +7,8 @@ import (
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
-	"github.com/qml-123/GateWay/common"
 	"github.com/qml-123/GateWay/pkg/rpc"
+	"github.com/qml-123/app_log/common"
 )
 
 func NewServer(conf *common.Conf, port int) *server.Hertz {

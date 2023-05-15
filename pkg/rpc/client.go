@@ -9,8 +9,8 @@ import (
 	"github.com/cloudwego/kitex/client"
 	"github.com/cloudwego/kitex/pkg/discovery"
 	consul "github.com/kitex-contrib/registry-consul"
-	"github.com/qml-123/GateWay/common"
 	"github.com/qml-123/GateWay/model"
+	"github.com/qml-123/app_log/common"
 )
 
 type BaseClient struct {
