@@ -32,6 +32,11 @@
           "rpc_function": "Register",
           "http_method": "POST",
           "http_path": "/app/register"
+        },
+        {
+          "rpc_function": "GetFileKey",
+          "http_method": "GET",
+          "http_path": "/app/get_file_key"
         }
       ]
     }

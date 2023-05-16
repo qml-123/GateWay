@@ -325,6 +325,14 @@ github.com/qml-123/app_log v1.0.2 h1:VPLDPy4Iof5gFI3A3wuxiJTPTzVmisXJ1y5QmieaME8
 github.com/qml-123/app_log v1.0.2/go.mod h1:rtc+r78KphgGoIWSsTWOOnhU9PNQnpwdFcF4i2lMOfY=
 github.com/qml-123/app_log v1.0.3 h1:TPMHIs+8ur5yNGxwX15l2IgOKPC2QnmOHrZ6gX5wwic=
 github.com/qml-123/app_log v1.0.3/go.mod h1:rtc+r78KphgGoIWSsTWOOnhU9PNQnpwdFcF4i2lMOfY=
+github.com/qml-123/app_log v1.0.4 h1:nZkwjUgEO8+S+umlNP21ls0LO3ny6pMicoOxhxKG9Aw=
+github.com/qml-123/app_log v1.0.4/go.mod h1:rtc+r78KphgGoIWSsTWOOnhU9PNQnpwdFcF4i2lMOfY=
+github.com/qml-123/app_log v1.0.6 h1:9IJlHzIT2mypp8FkDbsJ4Ojhp+eIxCFZCUSTeDITWVU=
+github.com/qml-123/app_log v1.0.6/go.mod h1:rtc+r78KphgGoIWSsTWOOnhU9PNQnpwdFcF4i2lMOfY=
+github.com/qml-123/app_log v1.1.1 h1:kgnCefW3bpN55ClUnjuceRSOHy9ev5OpOOXcN05OhGI=
+github.com/qml-123/app_log v1.1.1/go.mod h1:fhrnCQn/K6MTjkSKeyP3JUbkop0gvbXXymVt3ip5yLA=
+github.com/qml-123/app_log v1.1.2 h1:W5NSFRy9r2lF320BPtSgjl1jCjgp1WdiHzWNhX/zDio=
+github.com/qml-123/app_log v1.1.2/go.mod h1:fhrnCQn/K6MTjkSKeyP3JUbkop0gvbXXymVt3ip5yLA=
 github.com/qml-123/es_log v0.0.0-20230512103446-6f560b318b56 h1:vt1m7A8hnhUFNsx4EOP0Z4vQi7cfF2aEEWDhLmrvsY4=
 github.com/qml-123/es_log v0.0.0-20230512103446-6f560b318b56/go.mod h1:0yu/TJm/u9o/TqwggBHiAMnFjGaPl/NvzaDiPJPYKEU=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=

@@ -44,6 +44,6 @@ func Generate() snowflake.ID {
 	return _node.Generate()
 }
 
-func GenerateIDBase64() string {
-	return _node.Generate().Base64()
+func GenerateIDBase58() string {
+	return _node.Generate().Base58()
 }

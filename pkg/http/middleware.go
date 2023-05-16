@@ -24,8 +24,19 @@ func CorsMiddleware() app.HandlerFunc {
 		ctx.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		ctx.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
+		var logID string
+		if logID = string(ctx.GetHeader(model.LogID)); len(logID) == 0 {
+			logID = id.GenerateIDBase58()
+		}
+		c = context.WithValue(c, model.LogID, logID)
+
 		if string(ctx.Method()) == consts.MethodOptions {
 			ctx.Status(http.StatusOK)
+			return
+		}
+
+		if strings.Contains(string(ctx.Path()), "ping") {
+			ctx.Next(c)
 			return
 		}
 
@@ -39,40 +50,31 @@ func CorsMiddleware() app.HandlerFunc {
 
 		isTokenNew := false
 		var token string
-		if strings.Contains(string(ctx.Path()), "/app") {
-			token = string(ctx.Cookie(model.JwtToken))
-			if token != "" {
-				c = context.WithValue(c, model.JwtToken, token)
+		token = string(ctx.Cookie(model.JwtToken))
+		if token != "" {
+			c = context.WithValue(c, model.JwtToken, token)
+		}
+
+		if len(token) == 0 && !strings.Contains(string(ctx.Path()), "/login") && !strings.Contains(string(ctx.Path()), "/register") {
+			utils.ErrorJSON(c, ctx, error_code.NewStatus(error_code.InvalidToken.Code, "no token"))
+			ctx.Abort()
+			return
+		}
+		if len(token) > 0 && !strings.Contains(string(ctx.Path()), "/login") {
+			re_token := string(ctx.Cookie(model.RefreshToken))
+			if re_token != "" {
+				c = context.WithValue(c, model.RefreshToken, re_token)
 			}
-
-			//logger.Info(c, "path: %v", string(ctx.Path()))
-
-			if len(token) == 0 && !strings.Contains(string(ctx.Path()), "/login") && !strings.Contains(string(ctx.Path()), "/register") {
+			var err error
+			var userID int64
+			userID, token, isTokenNew, err = jwt.CheckTokenExpiry(c, token)
+			if err != nil {
 				utils.ErrorJSON(c, ctx, error_code.InvalidToken)
 				ctx.Abort()
 				return
 			}
-			if len(token) > 0 && !strings.Contains(string(ctx.Path()), "/login") {
-				re_token := string(ctx.Cookie(model.RefreshToken))
-				if re_token != "" {
-					c = context.WithValue(c, model.RefreshToken, re_token)
-				}
-				var err error
-				token, isTokenNew, err = jwt.CheckTokenExpiry(c, token)
-				if err != nil {
-					utils.ErrorJSON(c, ctx, error_code.InvalidToken)
-					ctx.Abort()
-					//utils.ErrorJSON(c, ctx, error_code.InvalidToken)
-					return
-				}
-			}
+			c = context.WithValue(c, model.UserID, userID)
 		}
-
-		var logID string
-		if logID = string(ctx.GetHeader(model.LogID)); len(logID) == 0 {
-			logID = id.GenerateIDBase64()
-		}
-		c = context.WithValue(c, model.LogID, logID)
 
 		ctx.Next(c)
 

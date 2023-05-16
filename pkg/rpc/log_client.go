@@ -11,9 +11,9 @@ import (
 	"github.com/cloudwego/kitex/client"
 	"github.com/qml-123/GateWay/model"
 	"github.com/qml-123/app_log/error_code"
+	"github.com/qml-123/app_log/kitex_gen/es_log"
+	"github.com/qml-123/app_log/kitex_gen/es_log/logservice"
 	"github.com/qml-123/app_log/logger"
-	"github.com/qml-123/es_log/kitex_gen/es_log"
-	"github.com/qml-123/es_log/kitex_gen/es_log/logservice"
 )
 
 type logClient struct {

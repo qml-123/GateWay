@@ -1,11 +1,9 @@
 package http
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 
-	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"github.com/qml-123/GateWay/pkg/rpc"
 	"github.com/qml-123/app_log/common"
@@ -52,8 +50,12 @@ func registerFunc(srv *server.Hertz, conf *common.Conf) error {
 					return err
 				}
 				srv.POST(http_path, f)
-			} else if http_path == "Get" {
-				srv.GET(http_path, func(c context.Context, ctx *app.RequestContext) {})
+			} else if http_method == "GET" {
+				f, err := rpc.GetHandler(service_name, rpc_func_name)
+				if err != nil {
+					return err
+				}
+				srv.GET(http_path, f)
 			} else {
 				return fmt.Errorf("not suport mehod: %s", http_method)
 			}
