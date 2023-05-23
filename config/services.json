@@ -3,7 +3,7 @@
   "listen_port": 9090,
   "listen_ip": "114.116.15.130",
   "consul_address": "114.116.15.130:8500",
-  "es_url" :  ["http://114.116.15.130:9200"],
+  "es_url" :  ["https://es-ca7nr12x.public.tencentelasticsearch.com:9200"],
   "api": [
     {
       "name": "LogService",
@@ -37,6 +37,21 @@
           "rpc_function": "GetFileKey",
           "http_method": "GET",
           "http_path": "/app/get_file_key"
+        },
+        {
+          "rpc_function": "Upload",
+          "http_method": "POST",
+          "http_path": "/app/upload"
+        },
+        {
+          "rpc_function": "GetFile",
+          "http_method": "POST",
+          "http_path": "/app/get_file"
+        },
+        {
+          "rpc_function": "GetFileChunkSize",
+          "http_method": "GET",
+          "http_path": "/app/get_chunk_num/:file_key"
         }
       ]
     }

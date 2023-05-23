@@ -35,16 +35,23 @@ func newappClient() *appClient {
 func (cli *appClient) initClient() error {
 	option := client.WithResolver(r)
 	var err error
-	cli.app_service_client, err = appservice.NewClient(model.AppServiceName, option)
+	cli.app_service_client, err = appservice.NewClient(model.AppServiceName, option,
+		client.WithConnectTimeout(5*time.Minute),
+		client.WithRPCTimeout(15*time.Minute),
+		client.WithGRPCConnPoolSize(20),
+	)
 	if err != nil {
 		log.Println("NewClient log filed")
 		return err
 	}
 	cli.m = map[string]func(c context.Context, ctx *app.RequestContext){
-		"Ping":       cli.PingHandler,
-		"Login":      cli.LoginHandler,
-		"Register":   cli.RegisterHandler,
-		"GetFileKey": cli.GetFileKeyHandler,
+		"Ping":             cli.PingHandler,
+		"Login":            cli.LoginHandler,
+		"Register":         cli.RegisterHandler,
+		"GetFileKey":       cli.GetFileKeyHandler,
+		"Upload":           cli.UploadHandler,
+		"GetFile":          cli.GetFileHandler,
+		"GetFileChunkSize": cli.GetFileChunkSizeHandler,
 	}
 	return nil
 }
@@ -136,9 +143,9 @@ func (cli *appClient) LoginHandler(c context.Context, ctx *app.RequestContext) {
 	var token, refreshToken string
 	refreshToken, err = redis.Get(fmt.Sprintf("%d_refresh_token", resp.UserId))
 	if err == goredis.Nil {
-		token, refreshToken, err = jwt.GenerateJWT(resp.GetUserId(), 5*time.Minute, true)
+		token, refreshToken, err = jwt.GenerateJWT(c, resp.GetUserId(), 5*time.Minute, true)
 	} else {
-		token, _, err = jwt.GenerateJWT(resp.GetUserId(), 5*time.Minute, true)
+		token, _, err = jwt.GenerateJWT(c, resp.GetUserId(), 5*time.Minute, true)
 	}
 
 	if err != nil {
@@ -182,5 +189,179 @@ func (cli *appClient) GetFileKeyHandler(c context.Context, ctx *app.RequestConte
 	}
 	utils.JSON(c, ctx, map[string]interface{}{
 		"file_key": resp.FileKey,
+	})
+}
+
+func getInt32(v interface{}) (int32, bool) {
+	float, ok := v.(float64)
+	if !ok {
+		return 0, false
+	}
+	if i := int32(float); float64(i) == float {
+		return i, true
+	}
+	return 0, false
+}
+
+func (cli *appClient) UploadHandler(c context.Context, ctx *app.RequestContext) {
+	userID, ok := c.Value(model.UserID).(int64)
+	if !ok {
+		logger.Warn(c, "[GetFileKeyHandler] no userID found")
+		utils.ErrorJSON(c, ctx, error_code.InternalError)
+		return
+	}
+	data, ok := c.Value(model.Data).(map[string]interface{})
+	if !ok {
+		logger.Warn(c, "[GetFileKeyHandler] no req data found")
+		utils.ErrorJSON(c, ctx, error_code.InternalError)
+		return
+	}
+
+	//logger.Info(c, "upload, req: %v", data)
+
+	isErr := false
+	if _, ok = data["file"]; !ok {
+		isErr = true
+	}
+	if _, ok = data["chunk_num"]; !ok {
+		isErr = true
+	}
+	if _, ok = data["chunk_size"]; !ok {
+		isErr = true
+	}
+	if _, ok = data["has_more"]; !ok {
+		isErr = true
+	}
+	if _, ok = data["file_key"]; !ok {
+		isErr = true
+	}
+	if _, ok = data["file_type"]; !ok {
+		isErr = true
+	}
+	if isErr {
+		utils.ErrorJSON(c, ctx, error_code.InvalidParam)
+		return
+	}
+
+	var chunkNum, chunkSize int32
+	if chunkNum, ok = getInt32(data["chunk_num"]); !ok {
+		utils.ErrorJSON(c, ctx, error_code.NewStatus(error_code.InvalidParam.Code, "chunk_num is not int32"))
+		return
+	}
+	if chunkSize, ok = getInt32(data["chunk_size"]); !ok {
+		utils.ErrorJSON(c, ctx, error_code.NewStatus(error_code.InvalidParam.Code, "chunk_size is not int32"))
+		return
+	}
+	req := &app_service.UploadFileRequest{
+		UserId:    userID,
+		File:      []byte(data["file"].(string)),
+		FileKey:   data["file_key"].(string),
+		FileType:  data["file_type"].(string),
+		HasMore:   data["has_more"].(bool),
+		ChunkNum:  int32(chunkNum),
+		ChunkSize: int32(chunkSize),
+	}
+	//err := file.Upload(c, req.UserId, req.File, req.ChunkNum, req.ChunkSize, req.FileKey, req.HasMore, req.FileType)
+	//if err != nil {
+	//	logger.Error(c, "[Upload] failed, userID: %d, file_key: %s, chunk_num: %v, err: %v", userID, data["file_key"], data["chunk_num"], err)
+	//	utils.ErrorJSON(c, ctx, error_code.InternalError)
+	//	return
+	//}
+	resp, err := cli.app_service_client.Upload(c, req)
+	if err != nil {
+		logger.Error(c, "[Upload] failed, userID: %d, file_key: %s, chunk_num: %v, err: %v", userID, data["file_key"], data["chunk_num"], err)
+		utils.ErrorJSON(c, ctx, error_code.InternalError)
+		return
+	}
+	if resp.GetBaseData().GetCode() != 0 {
+		logger.Warn(c, "[Upload] resp code != 0, userId: %v, file_key: %v, chunk_num: %v, code: %v, message: %v", userID, data["file_key"], data["chunk_num"], resp.GetBaseData().GetCode(), resp.GetBaseData().GetMessage())
+		utils.ErrorJSON(c, ctx, error_code.NewStatus(int(resp.GetBaseData().GetCode()), resp.GetBaseData().GetMessage()))
+		return
+	}
+	utils.JSON(c, ctx, map[string]interface{}{})
+}
+
+func (cli *appClient) GetFileHandler(c context.Context, ctx *app.RequestContext) {
+	userID, ok := c.Value(model.UserID).(int64)
+	if !ok {
+		logger.Warn(c, "[GetFileHandler] no userID found")
+		utils.ErrorJSON(c, ctx, error_code.InternalError)
+		return
+	}
+	data, ok := c.Value(model.Data).(map[string]interface{})
+	if !ok {
+		logger.Warn(c, "[GetFileHandler] no req data found")
+		utils.ErrorJSON(c, ctx, error_code.InternalError)
+		return
+	}
+
+	isErr := false
+	if _, ok = data["chunk_num"]; !ok {
+		isErr = true
+	}
+	if _, ok = data["file_key"]; !ok {
+		isErr = true
+	}
+	if _, ok = data["file_key"].(string); !ok {
+		isErr = true
+	}
+	if isErr {
+		utils.ErrorJSON(c, ctx, error_code.InvalidParam)
+		return
+	}
+
+	var chunkNum int32
+	if chunkNum, ok = getInt32(data["chunk_num"]); !ok {
+		utils.ErrorJSON(c, ctx, error_code.NewStatus(error_code.InvalidParam.Code, "chunk_num is not int32"))
+		return
+	}
+	req := &app_service.GetFileRequest{
+		UserId:   userID,
+		FileKey:  data["file_key"].(string),
+		ChunkNum: chunkNum,
+	}
+	resp, err := cli.app_service_client.GetFile(c, req)
+	if err != nil {
+		logger.Error(c, "[GetFileHandler] failed, userID: %d, file_key: %s, chunk_num: %v, err: %v", userID, data["file_key"], data["chunk_num"], err)
+		utils.ErrorJSON(c, ctx, error_code.InternalError)
+		return
+	}
+	if resp.GetBaseData().GetCode() != 0 {
+		logger.Warn(c, "[GetFileHandler] resp code != 0, userId: %v, file_key: %v, chunk_num: %v, code: %v, message: %v", userID, data["file_key"], data["chunk_num"], resp.GetBaseData().GetCode(), resp.GetBaseData().GetMessage())
+		utils.ErrorJSON(c, ctx, error_code.NewStatus(int(resp.GetBaseData().GetCode()), resp.GetBaseData().GetMessage()))
+		return
+	}
+	utils.JSON(c, ctx, map[string]interface{}{
+		"file":       string(resp.GetFile()),
+		"file_type":  resp.GetFileType(),
+		"has_more":   resp.GetHasMore(),
+		"chunk_size": resp.GetChunkSize(),
+	})
+}
+
+func (cli *appClient) GetFileChunkSizeHandler(c context.Context, ctx *app.RequestContext) {
+	userID, ok := c.Value(model.UserID).(int64)
+	if !ok {
+		logger.Warn(c, "[GetFileKeyHandler] no userID found")
+		utils.ErrorJSON(c, ctx, error_code.InternalError)
+		return
+	}
+	file_key := ctx.Param("file_key")
+	resp, err := cli.app_service_client.GetFileChunkSize(c, &app_service.GetFileChunkNumRequest{
+		UserId:  userID,
+		FileKey: file_key,
+	})
+	if err != nil {
+		logger.Error(c, "call GetFileChunkSize failed, err: %v", err.Error())
+		utils.ErrorJSON(c, ctx, err)
+		return
+	}
+	if resp.GetBaseData().GetCode() != 0 {
+		logger.Warn(c, "resp baseData code != 0, code: %d, message: %s", resp.GetBaseData().GetCode(), resp.GetBaseData().GetMessage())
+		utils.ErrorJSON(c, ctx, error_code.NewStatus(int(resp.GetBaseData().GetCode()), resp.GetBaseData().GetMessage()))
+		return
+	}
+	utils.JSON(c, ctx, map[string]interface{}{
+		"total_num": resp.GetChunkNum(),
 	})
 }

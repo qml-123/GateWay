@@ -40,18 +40,26 @@ func CorsMiddleware() app.HandlerFunc {
 			return
 		}
 
-		var m map[string]interface{}
-		if err := json.Unmarshal(ctx.Request.Body(), &m); err != nil {
-			utils.ErrorJSON(c, ctx, error_code.InvalidParam)
-			ctx.Abort()
+		if strings.Contains(string(ctx.Path()), "search") {
+			ctx.Next(c)
 			return
 		}
+
+		var m map[string]interface{}
+		if string(ctx.Method()) == consts.MethodPost {
+			if err := json.Unmarshal(ctx.Request.Body(), &m); err != nil {
+				utils.ErrorJSON(c, ctx, error_code.InvalidParam)
+				ctx.Abort()
+				return
+			}
+		}
+
 		c = context.WithValue(c, model.Data, m)
 
 		isTokenNew := false
 		var token string
 		token = string(ctx.Cookie(model.JwtToken))
-		if token != "" {
+		if len(token) > 0 {
 			c = context.WithValue(c, model.JwtToken, token)
 		}
 

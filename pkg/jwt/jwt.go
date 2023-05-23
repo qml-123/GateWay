@@ -21,37 +21,37 @@ type Claims struct {
 var jwtKey = []byte("your_secret_key")
 var refreshKey = []byte("your_refresh_secret_key")
 
-func GenerateJWT(userID int64, expiryTime time.Duration, refresh bool) (string, string, error) {
-	token := jwt.New(jwt.SigningMethodHS256)
-
-	claims := token.Claims.(jwt.MapClaims)
-
-	claims["authorized"] = true
-	claims["user_id"] = fmt.Sprintf("%d", userID)
-	claims["exp"] = time.Now().Add(expiryTime).Unix()
-
-	tokenString, err := token.SignedString(jwtKey)
-
+func GenerateJWT(ctx context.Context, userID int64, expiryTime time.Duration, refresh bool) (string, string, error) {
+	claims := &Claims{
+		UserID: fmt.Sprintf("%d", userID),
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(expiryTime).Unix(),
+			IssuedAt:  time.Now().Unix(),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signedToken, err := token.SignedString(jwtKey)
 	if err != nil {
 		return "", "", err
 	}
+
 	var refreshTokenString string
 	if refresh {
-		refreshToken := jwt.New(jwt.SigningMethodHS256)
-
-		refreshClaims := token.Claims.(jwt.MapClaims)
-
-		refreshClaims["authorized"] = true
-		refreshClaims["user_id"] = int64(userID)
-		refreshClaims["exp"] = time.Now().Add(24 * time.Hour).Unix()
-
+		refreshClaims := &Claims{
+			UserID: fmt.Sprintf("%d", userID),
+			StandardClaims: jwt.StandardClaims{
+				ExpiresAt: time.Now().Add(24 * time.Hour).Unix(),
+				IssuedAt:  time.Now().Unix(),
+			},
+		}
+		refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
 		refreshTokenString, err = refreshToken.SignedString(refreshKey)
 		if err != nil {
 			return "", "", err
 		}
 	}
 
-	return tokenString, refreshTokenString, nil
+	return signedToken, refreshTokenString, nil
 }
 
 // ParseJWT parses a JWT token
@@ -73,8 +73,33 @@ func parseRefreshJWT(tokenStr string) (*jwt.Token, error) {
 	})
 }
 
+func validateToken(tokenString string, secretKey []byte) (*Claims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		return secretKey, nil
+	})
+
+	if err != nil {
+		if ve, ok := err.(*jwt.ValidationError); ok {
+			if ve.Errors&jwt.ValidationErrorExpired != 0 {
+				// Token 过期，但仍然解析 Claims 数据
+				if claims, ok := token.Claims.(*Claims); ok {
+					return claims, nil
+				}
+			}
+		}
+		return nil, err
+	}
+
+	claims, ok := token.Claims.(*Claims)
+	if !ok || !token.Valid {
+		return nil, fmt.Errorf("invalid token")
+	}
+
+	return claims, nil
+}
+
 func CheckTokenExpiry(ctx context.Context, tokenStr string) (int64, string, bool, error) {
-	jwtToken, err := parseJWT(tokenStr)
+	claims, err := validateToken(tokenStr, jwtKey)
 	if err != nil {
 		logger.Warn(ctx, "jwt-token parseJWT failed, err: %v", err)
 		return 0, "", false, err
@@ -82,22 +107,13 @@ func CheckTokenExpiry(ctx context.Context, tokenStr string) (int64, string, bool
 
 	var userID int64
 	var userIDStr string
-	claims, ok := jwtToken.Claims.(jwt.MapClaims)
-	if !ok {
-		logger.Warn(ctx, "no Claims found, claims: %v", claims)
-		return 0, "", false, fmt.Errorf("no Claims found")
-	}
-	if userIDStr, ok = claims["user_id"].(string); !ok {
-		logger.Warn(ctx, "no userID found, claims: %v", claims)
-		return 0, "", false, fmt.Errorf("no userID found")
-	}
-	if userID, err = strconv.ParseInt(userIDStr, 10, 64); err != nil {
+	if userID, err = strconv.ParseInt(claims.UserID, 10, 64); err != nil {
 		logger.Warn(ctx, "userID ParseInt failed, str: %v", userIDStr)
 		return 0, "", false, err
 	}
 
 	// 检查是否过期
-	if !jwtToken.Valid {
+	if claims.ExpiresAt < time.Now().Unix() {
 		// get redis token
 		re_token, err := redis.Get(fmt.Sprintf("%d_refresh_token", userID))
 		if err != nil && err != goredis.Nil {
@@ -119,7 +135,7 @@ func CheckTokenExpiry(ctx context.Context, tokenStr string) (int64, string, bool
 			return 0, "", false, fmt.Errorf("not found refresh_token")
 		}
 
-		newToken, _, err := GenerateJWT(userID, 5*time.Minute, false)
+		newToken, _, err := GenerateJWT(ctx, userID, 5*time.Minute, false)
 		if err != nil {
 			logger.Warn(ctx, "GenerateJWT failed, err: %v", err)
 			return 0, "", false, err

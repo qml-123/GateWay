@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/qml-123/AppService/pkg/db"
 	"github.com/qml-123/GateWay/pkg/http"
 	"github.com/qml-123/GateWay/pkg/id"
 	"github.com/qml-123/GateWay/pkg/log"
@@ -28,10 +27,7 @@ func main() {
 	if err = log.InitLogger(conf.EsUrl); err != nil {
 		panic(err)
 	}
-	//db
-	if err = db.InitDB(); err != nil {
-		panic(err)
-	}
+
 	// redis
 	if err = redis.InitRedis(); err != nil {
 		panic(err)

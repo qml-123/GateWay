@@ -10,9 +10,8 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/kitex-contrib/registry-consul v0.0.0-20230406075225-7d341f036654
-	github.com/qml-123/AppService v0.0.0-20230515093532-6f4309f6f889
-	github.com/qml-123/app_log v1.1.2
-	github.com/qml-123/es_log v0.0.0-20230512103446-6f560b318b56
+	github.com/qml-123/AppService v0.0.0-20230523064621-0a599068c513
+	github.com/qml-123/app_log v1.1.17
 )
 
 require (

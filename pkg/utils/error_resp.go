@@ -10,12 +10,11 @@ import (
 	"github.com/cloudwego/hertz/pkg/protocol"
 	"github.com/qml-123/GateWay/model"
 	"github.com/qml-123/app_log/error_code"
-	"github.com/qml-123/app_log/logger"
 )
 
 func ErrorJSON(c context.Context, ctx *app.RequestContext, err error) {
 	bizErr, ok := err.(*error_code.StatusError)
-	logger.Info(c, "err: %v", err.Error())
+
 	if !ok || errors.Is(err, error_code.InternalError) {
 		ctx.JSON(http.StatusInternalServerError, error_code.InternalError)
 		return
